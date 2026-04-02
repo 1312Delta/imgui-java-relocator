@@ -156,8 +156,12 @@ sed -i "s|version = 'git describe --tags --always'.execute().text.trim().substri
 # publish.gradle — Maven coordinates + custom Maven server
 sed -i "s/groupId = 'io.github.spair'/groupId = '${MAVEN_GROUP}'/" publish.gradle
 
-# Replace the Sonatype/Maven Central repository block with a custom server
-# that reads MAVEN_URL and MAVEN_TOKEN from the environment.
+# Replace the Sonatype/Maven Central repository block with a custom server.
+# IMPORTANT: MAVEN_URL must point to the repo root (e.g. https://maven.example.org),
+# NOT including the repository name (e.g. /releases). MAVEN_REPO_NAME holds that
+# separately (e.g. "releases"). This prevents Reposilite from prepending the repo
+# name segment to the Maven groupId in the published POM, which would cause Gradle
+# to resolve the group as "releases.com.lambda" instead of "com.lambda".
 cat > publish.gradle << 'PUBLISH_EOF'
 ext.configurePublishing = { packageName, packageDesc, packageVersion ->
     tasks.register('sourcesJar', Jar) {
@@ -174,10 +178,17 @@ ext.configurePublishing = { packageName, packageDesc, packageVersion ->
         repositories {
             maven {
                 name = 'Custom'
-                url = findProperty('mavenUrl') ?: 'file://localhost/tmp/maven-repo'
-                credentials(PasswordCredentials) {
-                    username = findProperty('mavenUser') ?: ''
-                    password = findProperty('mavenPassword') ?: ''
+                // MAVEN_BASE_URL: repo root only, e.g. https://maven.example.org
+                // MAVEN_REPO_NAME: repository name,  e.g. releases
+                def baseUrl = System.getenv('MAVEN_BASE_URL')?.trim() ?: 'file://localhost/tmp/maven-repo'
+                def repoName = System.getenv('MAVEN_REPO_NAME')?.trim() ?: 'releases'
+                url = "${baseUrl}/${repoName}"
+                credentials(HttpHeaderCredentials) {
+                    name = 'Authorization'
+                    value = "Bearer ${System.getenv('MAVEN_TOKEN')?.trim() ?: ''}"
+                }
+                authentication {
+                    header(HttpHeaderAuthentication)
                 }
             }
         }

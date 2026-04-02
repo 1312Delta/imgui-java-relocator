@@ -201,8 +201,9 @@ A GitHub Actions workflow (`.github/workflows/release.yml`) automates the full p
 Required secrets:
 | Secret | Description |
 |--------|-------------|
-| `MAVEN_URL` | Maven repository URL |
+| `MAVEN_BASE_URL` | Maven repository URL |
 | `MAVEN_TOKEN` | Bearer token for Maven auth |
+| `MAVEN_REPO_NAME` | Maven repository name |
 | `SIGNING_KEY_ID` | GPG key ID (optional) |
 | `SIGNING_KEY` | GPG private key (optional) |
 | `SIGNING_KEY_PASS` | GPG passphrase (optional) |
