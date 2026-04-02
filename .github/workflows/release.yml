@@ -221,11 +221,11 @@ jobs:
 
       - name: Verify Maven credentials
         env:
-          MAVEN_URL: ${{ secrets.MAVEN_URL }}
+          MAVEN_BASE_URL: ${{ secrets.MAVEN_BASE_URL }}
           MAVEN_USER: ${{ secrets.MAVEN_USER }}
           MAVEN_TOKEN: ${{ secrets.MAVEN_TOKEN }}
         run: |
-          if [ -z "$MAVEN_URL" ]; then echo "ERROR: MAVEN_URL secret not set"; exit 1; fi
+          if [ -z "$MAVEN_BASE_URL" ]; then echo "ERROR: MAVEN_BASE_URL secret not set"; exit 1; fi
           if [ -z "$MAVEN_USER" ]; then echo "ERROR: MAVEN_USER secret not set"; exit 1; fi
           if [ -z "$MAVEN_TOKEN" ]; then echo "ERROR: MAVEN_TOKEN secret not set"; exit 1; fi
           echo "All Maven secrets are set"
