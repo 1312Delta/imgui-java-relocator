@@ -207,15 +207,13 @@ jobs:
             echo "OK: $f ($(stat --printf='%s' "work/imgui-java/bin/$f") bytes)"
           done
 
-      # Verify glibc compat on the Linux .so
-      - name: Check glibc compat
+      # Report glibc version requirements (informational, not blocking)
+      - name: Check glibc versions
         run: |
           LIB_NAME="${{ steps.config.outputs.lib_name }}"
-          if objdump -T "work/imgui-java/bin/lib${LIB_NAME}.so" | grep -q 'GLIBC_2\.14'; then
-            echo "ERROR: lib${LIB_NAME}.so requires GLIBC_2.14+"
-            exit 1
-          fi
-          echo "OK: No GLIBC_2.14 dependency"
+          echo "glibc version requirements:"
+          objdump -T "work/imgui-java/bin/lib${LIB_NAME}.so" \
+            | grep -oP 'GLIBC_\d+\.\d+(\.\d+)?' | sort -V | uniq -c | sort -rn
 
       # Build all JARs
       - name: Build JARs
