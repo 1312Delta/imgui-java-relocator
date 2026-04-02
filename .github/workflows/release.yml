@@ -215,6 +215,10 @@ jobs:
           objdump -T "work/imgui-java/bin/lib${LIB_NAME}.so" \
             | grep -oP 'GLIBC_\d+\.\d+(\.\d+)?' | sort -V | uniq -c | sort -rn
 
+      # Restore execute permission lost during artifact upload/download
+      - name: Fix gradlew permissions
+        run: chmod +x work/imgui-java/gradlew
+
       # Build all JARs
       - name: Build JARs
         working-directory: work/imgui-java
