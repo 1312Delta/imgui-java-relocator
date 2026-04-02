@@ -102,6 +102,7 @@ jobs:
     needs: [check-release, relocate]
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         include:
           - target: x86_64-linux-gnu
@@ -149,7 +150,9 @@ jobs:
         with:
           name: native-${{ matrix.artifact }}
           retention-days: 1
-          path: zig-out/lib/
+          path: |
+            zig-out/lib/*
+            zig-out/bin/*.dll
 
   # ─── Package JARs + publish to Maven ────────────────────────────────────────
   publish:
@@ -169,33 +172,21 @@ jobs:
           name: relocated-sources
           path: work/imgui-java/
 
-      # Download all native artifacts into bin/
-      - name: Download Linux native
+      # Download all native artifacts and flatten into bin/
+      - name: Download natives
         uses: actions/download-artifact@v4
         with:
-          name: native-linux-x86_64
-          path: work/imgui-java/bin/
+          pattern: native-*
+          merge-multiple: true
+          path: work/imgui-java/natives-tmp/
 
-      - name: Download Windows native
-        uses: actions/download-artifact@v4
-        with:
-          name: native-windows-x86_64
-          path: work/imgui-java/bin/
-
-      - name: Download macOS x86_64 native
-        uses: actions/download-artifact@v4
-        with:
-          name: native-macos-x86_64
-          path: work/imgui-java/bin/
-
-      - name: Download macOS aarch64 native
-        uses: actions/download-artifact@v4
-        with:
-          name: native-macos-aarch64
-          path: work/imgui-java/bin/
-
-      - name: List bin contents
-        run: ls -la work/imgui-java/bin/
+      - name: Flatten natives into bin/
+        run: |
+          mkdir -p work/imgui-java/bin
+          find work/imgui-java/natives-tmp -type f \( -name '*.so' -o -name '*.dll' -o -name '*.dylib' \) \
+            -exec cp {} work/imgui-java/bin/ \;
+          rm -rf work/imgui-java/natives-tmp
+          ls -la work/imgui-java/bin/
 
       - name: Load config
         id: config
@@ -282,7 +273,14 @@ jobs:
         with:
           pattern: native-*
           merge-multiple: true
-          path: natives/
+          path: natives-tmp/
+
+      - name: Flatten natives
+        run: |
+          mkdir -p natives
+          find natives-tmp -type f \( -name '*.so' -o -name '*.dll' -o -name '*.dylib' \) \
+            -exec cp {} natives/ \;
+          rm -rf natives-tmp
 
       - name: Create release
         env:

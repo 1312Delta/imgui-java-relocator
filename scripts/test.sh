@@ -60,6 +60,16 @@ lib_filename() {
     esac
 }
 
+# Returns the zig-out subdirectory for the given target.
+# Zig puts .dll in bin/ and .so/.dylib in lib/.
+zig_out_dir() {
+    local target="$1"
+    case "$target" in
+        *windows*)  echo "$ROOT_DIR/zig-out/bin" ;;
+        *)          echo "$ROOT_DIR/zig-out/lib" ;;
+    esac
+}
+
 # ─── Main ───────────────────────────────────────────────────────────────────
 
 echo "╔══════════════════════════════════════════════════════════╗"
@@ -98,7 +108,7 @@ if [ "$SKIP_CROSS" = false ]; then
 
             # Copy artifact to bin/
             local_lib=$(lib_filename "$t")
-            built_lib="$ROOT_DIR/zig-out/lib/$local_lib"
+            built_lib="$(zig_out_dir "$t")/$local_lib"
             if [ -f "$built_lib" ]; then
                 cp "$built_lib" "$BIN_DIR/$local_lib"
                 pass "$t → $local_lib"
@@ -124,7 +134,7 @@ else
 
     # Copy host artifact to bin/
     host_lib=$(lib_filename "$(uname -s)")
-    built_lib="$ROOT_DIR/zig-out/lib/$host_lib"
+    built_lib="$(zig_out_dir "$(uname -s)")/$host_lib"
     if [ -f "$built_lib" ]; then
         mkdir -p "$BIN_DIR"
         cp "$built_lib" "$BIN_DIR/$host_lib"

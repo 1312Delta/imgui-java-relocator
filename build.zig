@@ -87,12 +87,12 @@ pub fn build(b: *std.Build) void {
     mod.addIncludePath(jni_path);
     mod.addIncludePath(b.path(b.fmt("{s}/dirent", .{jni_dir})));
 
-    // JNI headers: use bundled if available, otherwise find from JAVA_HOME or system
+    // JNI headers: use bundled jni-headers/ (contains jni.h + universal jni_md.h).
+    // relocate.sh creates this directory with headers that work for all targets.
+    // Falls back to JAVA_HOME or system paths for local-only builds.
     const jni_headers_dir = b.fmt("{s}/jni-headers", .{jni_dir});
-    const jni_platform_dir = b.fmt("{s}/jni-headers/{s}", .{ jni_dir, jni_platform });
     if (dirExists(jni_headers_dir)) {
         mod.addIncludePath(b.path(jni_headers_dir));
-        mod.addIncludePath(b.path(jni_platform_dir));
     } else if (std.process.getEnvVarOwned(b.allocator, "JAVA_HOME") catch null) |java_home| {
         mod.addIncludePath(.{ .cwd_relative = b.fmt("{s}/include", .{java_home}) });
         mod.addIncludePath(.{ .cwd_relative = b.fmt("{s}/include/{s}", .{ java_home, jni_platform }) });

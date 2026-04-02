@@ -317,6 +317,63 @@ find "$JNI_DIR" \( -name '*.cpp' -o -name '*.h' \) -exec sed -i \
     -e "s|L${ORIG_PATH}/|L${TARGET_PATH}/|g" \
 {} +
 
+# ─── Bundle JNI headers for cross-compilation ──────────────────────────────
+
+echo "  Bundling JNI headers for cross-compilation..."
+
+# Copy jni.h from the build JDK, then provide jni_md.h for all target platforms.
+# jni.h is platform-independent; jni_md.h only differs in type sizes and calling
+# conventions. We put a universal jni_md.h alongside jni.h so it's found via the
+# same include path regardless of cross-compilation target.
+JNI_HEADERS_DIR="$JNI_DIR/jni-headers"
+mkdir -p "$JNI_HEADERS_DIR"
+
+JAVA_HOME_RESOLVED="${JAVA_HOME:-$(dirname $(dirname $(readlink -f $(which javac))))}"
+if [ -f "$JAVA_HOME_RESOLVED/include/jni.h" ]; then
+    cp "$JAVA_HOME_RESOLVED/include/jni.h" "$JNI_HEADERS_DIR/"
+else
+    echo "WARNING: Could not find jni.h in JAVA_HOME ($JAVA_HOME_RESOLVED)"
+fi
+
+# Write a universal jni_md.h that works for Linux, macOS, and Windows (all 64-bit)
+cat > "$JNI_HEADERS_DIR/jni_md.h" << 'JNI_MD_EOF'
+#ifndef _JAVASOFT_JNI_MD_H_
+#define _JAVASOFT_JNI_MD_H_
+
+#ifndef __has_attribute
+  #define __has_attribute(x) 0
+#endif
+
+#if defined(_WIN32)
+  #define JNIEXPORT __declspec(dllexport)
+  #define JNIIMPORT __declspec(dllimport)
+  #define JNICALL   __stdcall
+  typedef int jint;
+  typedef __int64 jlong;
+#else
+  #if (defined(__GNUC__) && ((__GNUC__ > 4) || (__GNUC__ == 4) && (__GNUC_MINOR__ > 2))) || __has_attribute(visibility)
+    #define JNIEXPORT __attribute__((visibility("default")))
+    #define JNIIMPORT __attribute__((visibility("default")))
+  #else
+    #define JNIEXPORT
+    #define JNIIMPORT
+  #endif
+  #define JNICALL
+  typedef int jint;
+  #ifdef _LP64
+    typedef long jlong;
+  #else
+    typedef long long jlong;
+  #endif
+#endif
+
+typedef signed char jbyte;
+
+#endif /* !_JAVASOFT_JNI_MD_H_ */
+JNI_MD_EOF
+
+echo "  JNI headers bundled at $JNI_HEADERS_DIR"
+
 # ─── Step 10: Generate source manifest for Zig build ────────────────────────
 
 echo "[10/10] Generating sources.txt manifest for Zig build..."
