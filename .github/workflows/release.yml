@@ -219,6 +219,17 @@ jobs:
       - name: Fix gradlew permissions
         run: chmod +x work/imgui-java/gradlew
 
+      - name: Verify Maven credentials
+        env:
+          MAVEN_URL: ${{ secrets.MAVEN_URL }}
+          MAVEN_USER: ${{ secrets.MAVEN_USER }}
+          MAVEN_TOKEN: ${{ secrets.MAVEN_TOKEN }}
+        run: |
+          if [ -z "$MAVEN_URL" ]; then echo "ERROR: MAVEN_URL secret not set"; exit 1; fi
+          if [ -z "$MAVEN_USER" ]; then echo "ERROR: MAVEN_USER secret not set"; exit 1; fi
+          if [ -z "$MAVEN_TOKEN" ]; then echo "ERROR: MAVEN_TOKEN secret not set"; exit 1; fi
+          echo "All Maven secrets are set"
+
       # Build all JARs
       - name: Build JARs
         working-directory: work/imgui-java
@@ -232,26 +243,26 @@ jobs:
       # Publish binding, lwjgl3, app JARs
       - name: Publish to Maven
         working-directory: work/imgui-java
-        env:
-          MAVEN_URL: ${{ secrets.MAVEN_URL }}
-          MAVEN_TOKEN: ${{ secrets.MAVEN_TOKEN }}
         run: |
           for module in imgui-binding imgui-lwjgl3 imgui-app; do
             echo "Publishing $module..."
-            ./gradlew :$module:publishImguiPublicationToCustomRepository
+            ./gradlew :$module:publishImguiPublicationToCustomRepository \
+              -PmavenUrl=${{ secrets.MAVEN_URL }} \
+              -PmavenUser=${{ secrets.MAVEN_USER }} \
+              -PmavenPassword=${{ secrets.MAVEN_TOKEN }}
           done
 
       # Publish per-platform natives JARs
       - name: Publish native JARs
         working-directory: work/imgui-java
-        env:
-          MAVEN_URL: ${{ secrets.MAVEN_URL }}
-          MAVEN_TOKEN: ${{ secrets.MAVEN_TOKEN }}
         run: |
           for platform in linux windows macos; do
             echo "Publishing natives for $platform..."
             ./gradlew :imgui-binding-natives:publishImguiPublicationToCustomRepository \
-              -PdeployType=$platform
+              -PdeployType=$platform \
+              -PmavenUrl=${{ secrets.MAVEN_URL }} \
+              -PmavenUser=${{ secrets.MAVEN_USER }} \
+              -PmavenPassword=${{ secrets.MAVEN_TOKEN }}
           done
 
   # ─── Create GitHub release ──────────────────────────────────────────────────

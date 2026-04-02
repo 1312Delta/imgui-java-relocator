@@ -170,13 +170,10 @@ ext.configurePublishing = { packageName, packageDesc, packageVersion ->
         repositories {
             maven {
                 name = 'Custom'
-                url = System.getenv('MAVEN_URL')?.trim() ?: 'file://localhost/tmp/maven-repo'
-                credentials(HttpHeaderCredentials) {
-                    name = 'Authorization'
-                    value = "Bearer ${System.getenv('MAVEN_TOKEN')?.trim() ?: ''}"
-                }
-                authentication {
-                    header(HttpHeaderAuthentication)
+                url = findProperty('mavenUrl') ?: 'file://localhost/tmp/maven-repo'
+                credentials(PasswordCredentials) {
+                    username = findProperty('mavenUser') ?: ''
+                    password = findProperty('mavenPassword') ?: ''
                 }
             }
         }
