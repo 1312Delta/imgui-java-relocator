@@ -146,8 +146,12 @@ echo "  Resource paths updated."
 
 echo "[6/8] Updating Gradle build configuration..."
 
-# Root build.gradle — Maven group
+# Root build.gradle — Maven group + hardcode version from tag
+# The upstream build.gradle derives version via `git describe --tags`, but the
+# .git directory is stripped during CI artifact upload. Replace with the actual tag.
+VERSION="${UPSTREAM_TAG#v}"
 sed -i "s/group = 'imgui-java'/group = '${MAVEN_GROUP}'/" build.gradle
+sed -i "s|version = 'git describe --tags --always'.execute().text.trim().substring(1)|version = '${VERSION}'|" build.gradle
 
 # publish.gradle — Maven coordinates + custom Maven server
 sed -i "s/groupId = 'io.github.spair'/groupId = '${MAVEN_GROUP}'/" publish.gradle
