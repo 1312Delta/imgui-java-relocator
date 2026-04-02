@@ -180,15 +180,22 @@ ext.configurePublishing = { packageName, packageDesc, packageVersion ->
                 name = 'Custom'
                 // MAVEN_BASE_URL: repo root only, e.g. https://maven.example.org
                 // MAVEN_REPO_NAME: repository name,  e.g. releases
-                def baseUrl = System.getenv('MAVEN_BASE_URL')?.trim() ?: 'file://localhost/tmp/maven-repo'
+                def baseUrl = (System.getenv('MAVEN_BASE_URL')?.trim() ?: 'file://localhost/tmp/maven-repo').replaceAll('/+$', '')
                 def repoName = System.getenv('MAVEN_REPO_NAME')?.trim() ?: 'releases'
-                url = "${baseUrl}/${repoName}"
-                credentials(HttpHeaderCredentials) {
-                    name = 'Authorization'
-                    value = "Bearer ${System.getenv('MAVEN_TOKEN')?.trim() ?: ''}"
+                // Avoid duplicating repo name if baseUrl already ends with it
+                if (baseUrl.endsWith("/${repoName}")) {
+                    url = baseUrl
+                } else {
+                    url = "${baseUrl}/${repoName}"
                 }
-                authentication {
-                    header(HttpHeaderAuthentication)
+                if (baseUrl.startsWith('http://') || baseUrl.startsWith('https://')) {
+                    credentials(HttpHeaderCredentials) {
+                        name = 'Authorization'
+                        value = "Bearer ${System.getenv('MAVEN_TOKEN')?.trim() ?: ''}"
+                    }
+                    authentication {
+                        header(HttpHeaderAuthentication)
+                    }
                 }
             }
         }

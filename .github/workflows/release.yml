@@ -246,6 +246,7 @@ jobs:
         env:
           MAVEN_BASE_URL: ${{ secrets.MAVEN_BASE_URL }}
           MAVEN_REPO_NAME: ${{ secrets.MAVEN_REPO_NAME }}
+          MAVEN_USER: ${{ secrets.MAVEN_USER }}
           MAVEN_TOKEN: ${{ secrets.MAVEN_TOKEN }}
         run: |
           for module in imgui-binding imgui-lwjgl3 imgui-app; do
@@ -259,6 +260,7 @@ jobs:
         env:
           MAVEN_BASE_URL: ${{ secrets.MAVEN_BASE_URL }}
           MAVEN_REPO_NAME: ${{ secrets.MAVEN_REPO_NAME }}
+          MAVEN_USER: ${{ secrets.MAVEN_USER }}
           MAVEN_TOKEN: ${{ secrets.MAVEN_TOKEN }}
         run: |
           for platform in linux windows macos; do
