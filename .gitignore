@@ -8,3 +8,5 @@ zig-cache/
 *.dylib
 hs_err_*.log
 core.*
+.secrets
+.actrc

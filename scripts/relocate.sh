@@ -189,12 +189,9 @@ ext.configurePublishing = { packageName, packageDesc, packageVersion ->
                     url = "${baseUrl}/${repoName}"
                 }
                 if (baseUrl.startsWith('http://') || baseUrl.startsWith('https://')) {
-                    credentials(HttpHeaderCredentials) {
-                        name = 'Authorization'
-                        value = "Bearer ${System.getenv('MAVEN_TOKEN')?.trim() ?: ''}"
-                    }
-                    authentication {
-                        header(HttpHeaderAuthentication)
+                    credentials {
+                        username = System.getenv('MAVEN_USER')?.trim() ?: ''
+                        password = System.getenv('MAVEN_TOKEN')?.trim() ?: ''
                     }
                 }
             }
