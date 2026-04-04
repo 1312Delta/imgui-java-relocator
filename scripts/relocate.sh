@@ -157,11 +157,8 @@ sed -i "s|version = 'git describe --tags --always'.execute().text.trim().substri
 sed -i "s/groupId = 'io.github.spair'/groupId = '${MAVEN_GROUP}'/" publish.gradle
 
 # Replace the Sonatype/Maven Central repository block with a custom server.
-# IMPORTANT: MAVEN_URL must point to the repo root (e.g. https://maven.example.org),
-# NOT including the repository name (e.g. /releases). MAVEN_REPO_NAME holds that
-# separately (e.g. "releases"). This prevents Reposilite from prepending the repo
-# name segment to the Maven groupId in the published POM, which would cause Gradle
-# to resolve the group as "releases.com.lambda" instead of "com.lambda".
+# MAVEN_URL must be the exact, final repository URL including the repo name,
+# e.g. https://maven.example.org/releases — no construction or deduplication.
 cat > publish.gradle << 'PUBLISH_EOF'
 ext.configurePublishing = { packageName, packageDesc, packageVersion ->
     tasks.register('sourcesJar', Jar) {
@@ -178,18 +175,10 @@ ext.configurePublishing = { packageName, packageDesc, packageVersion ->
         repositories {
             maven {
                 name = 'Custom'
-                // MAVEN_BASE_URL: repo root only, e.g. https://maven.example.org
-                // MAVEN_REPO_NAME: repository name,  e.g. releases
-                def baseUrl = (System.getenv('MAVEN_BASE_URL')?.trim() ?: 'file://localhost/tmp/maven-repo').replaceAll('/+$', '')
-                def repoName = System.getenv('MAVEN_REPO_NAME')?.trim() ?: ''
-                if (repoName.isEmpty()) {
-                    url = baseUrl
-                } else if (baseUrl.endsWith("/${repoName}")) {
-                    url = baseUrl
-                } else {
-                    url = "${baseUrl}/${repoName}"
-                }
-                if (baseUrl.startsWith('http://') || baseUrl.startsWith('https://')) {
+                // MAVEN_URL: full repository URL, e.g. https://maven.example.org/releases
+                def mavenUrl = (System.getenv('MAVEN_URL')?.trim() ?: 'file://localhost/tmp/maven-repo').replaceAll('/+$', '')
+                url = mavenUrl
+                if (mavenUrl.startsWith('http://') || mavenUrl.startsWith('https://')) {
                     credentials {
                         username = System.getenv('MAVEN_USER')?.trim() ?: ''
                         password = System.getenv('MAVEN_TOKEN')?.trim() ?: ''
