@@ -181,9 +181,10 @@ ext.configurePublishing = { packageName, packageDesc, packageVersion ->
                 // MAVEN_BASE_URL: repo root only, e.g. https://maven.example.org
                 // MAVEN_REPO_NAME: repository name,  e.g. releases
                 def baseUrl = (System.getenv('MAVEN_BASE_URL')?.trim() ?: 'file://localhost/tmp/maven-repo').replaceAll('/+$', '')
-                def repoName = System.getenv('MAVEN_REPO_NAME')?.trim() ?: 'releases'
-                // Avoid duplicating repo name if baseUrl already ends with it
-                if (baseUrl.endsWith("/${repoName}")) {
+                def repoName = System.getenv('MAVEN_REPO_NAME')?.trim() ?: ''
+                if (repoName.isEmpty()) {
+                    url = baseUrl
+                } else if (baseUrl.endsWith("/${repoName}")) {
                     url = baseUrl
                 } else {
                     url = "${baseUrl}/${repoName}"
